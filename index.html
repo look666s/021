@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>经典俄罗斯方块</title>
 <style>
-/* ---------- 主题CSS变量 ---------- */
+/* ========== 主题CSS变量 ========== */
 :root,
 [data-theme="classic"] {
     --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
@@ -34,6 +34,10 @@
     --gameover-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
     --leaderboard-item-bg: rgba(74, 74, 138, 0.2);
     --theme-dot-color: #8888cc;
+    --nav-bg: rgba(15, 12, 41, 0.95);
+    --modal-bg: rgba(26, 26, 46, 0.98);
+    --overlay-bg: rgba(0, 0, 0, 0.85);
+    --toast-bg: rgba(50, 50, 100, 0.95);
 }
 
 [data-theme="neon"] {
@@ -63,6 +67,10 @@
     --gameover-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
     --leaderboard-item-bg: rgba(42, 138, 42, 0.2);
     --theme-dot-color: #44cc44;
+    --nav-bg: rgba(10, 26, 10, 0.95);
+    --modal-bg: rgba(10, 30, 10, 0.98);
+    --overlay-bg: rgba(0, 0, 0, 0.85);
+    --toast-bg: rgba(20, 60, 20, 0.95);
 }
 
 [data-theme="warm"] {
@@ -92,8 +100,13 @@
     --gameover-shadow: 0 0 20px rgba(255, 107, 59, 0.5);
     --leaderboard-item-bg: rgba(138, 90, 42, 0.2);
     --theme-dot-color: #cc8844;
+    --nav-bg: rgba(26, 15, 10, 0.95);
+    --modal-bg: rgba(30, 20, 10, 0.98);
+    --overlay-bg: rgba(0, 0, 0, 0.85);
+    --toast-bg: rgba(60, 40, 20, 0.95);
 }
 
+/* ========== 基础样式 ========== */
 * {
     margin: 0;
     padding: 0;
@@ -105,20 +118,211 @@ body {
     min-height: 100vh;
     font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
     color: var(--text-color);
-    padding: 20px;
+    padding: 70px 20px 20px;
     overflow-x: hidden;
 }
 
-.game-title {
-    text-align: center;
-    font-size: 32px;
-    font-weight: bold;
-    color: var(--accent-color);
-    margin-bottom: 20px;
-    text-shadow: var(--title-shadow);
-    letter-spacing: 8px;
+/* ========== 加载画面 ========== */
+#loadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    transition: opacity 0.6s ease;
 }
 
+#loadingScreen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#loadingScreen .cover-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.3;
+}
+
+.loading-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.loading-title {
+    font-size: 42px;
+    font-weight: bold;
+    color: #8888cc;
+    text-shadow: 0 0 30px rgba(136, 136, 204, 0.8);
+    letter-spacing: 10px;
+}
+
+.loading-blocks {
+    display: flex;
+    gap: 12px;
+}
+
+.loading-block {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    animation: loadingSpin 1.5s ease-in-out infinite;
+}
+
+.loading-block:nth-child(1) { background: #00f0f0; animation-delay: 0s; }
+.loading-block:nth-child(2) { background: #f0f000; animation-delay: 0.15s; }
+.loading-block:nth-child(3) { background: #a000f0; animation-delay: 0.3s; }
+.loading-block:nth-child(4) { background: #f0a000; animation-delay: 0.45s; }
+.loading-block:nth-child(5) { background: #00f000; animation-delay: 0.6s; }
+.loading-block:nth-child(6) { background: #f00000; animation-delay: 0.75s; }
+.loading-block:nth-child(7) { background: #0000f0; animation-delay: 0.9s; }
+
+@keyframes loadingSpin {
+    0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
+    50% { transform: rotate(180deg) scale(1.3); opacity: 1; }
+    100% { transform: rotate(360deg) scale(1); opacity: 0.5; }
+}
+
+.loading-bar-container {
+    width: 280px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.loading-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #8888cc, #00f0f0);
+    border-radius: 3px;
+    transition: width 0.1s linear;
+}
+
+.loading-text {
+    font-size: 14px;
+    color: #8888aa;
+    letter-spacing: 2px;
+}
+
+/* ========== 顶部导航栏 ========== */
+#topNav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background: var(--nav-bg);
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--accent-color);
+    text-shadow: var(--title-shadow);
+    letter-spacing: 4px;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--btn-bg);
+    color: var(--text-color);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.nav-btn:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--border-hover-color);
+}
+
+.sound-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    background: var(--panel-bg);
+    color: var(--text-color);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-toggle.muted {
+    opacity: 0.5;
+}
+
+.theme-switcher {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background: var(--panel-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 18px;
+    padding: 3px 6px;
+}
+
+.theme-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.theme-dot:hover {
+    transform: scale(1.15);
+}
+
+.theme-dot.active {
+    border-color: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.theme-dot[data-theme="classic"] { background: #8888cc; }
+.theme-dot[data-theme="neon"] { background: #44cc44; }
+.theme-dot[data-theme="warm"] { background: #cc8844; }
+
+/* ========== 游戏布局 ========== */
 .game-wrapper {
     display: flex;
     gap: 24px;
@@ -132,97 +336,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    width: 200px;
-}
-
-.leaderboard-panel {
-    background: var(--panel-bg);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    padding: 16px;
-}
-
-.leaderboard-panel h3 {
-    font-size: 14px;
-    color: var(--accent-color);
-    margin-bottom: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
-}
-
-.leaderboard-list {
-    list-style: none;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.leaderboard-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 6px;
-    border-radius: 4px;
-    margin-bottom: 4px;
-    background: var(--leaderboard-item-bg);
-    font-size: 12px;
-}
-
-.leaderboard-item.rank-1 {
-    background: rgba(255, 215, 0, 0.2);
-    border-left: 3px solid #ffd700;
-}
-
-.leaderboard-item.rank-2 {
-    background: rgba(192, 192, 192, 0.2);
-    border-left: 3px solid #c0c0c0;
-}
-
-.leaderboard-item.rank-3 {
-    background: rgba(205, 127, 50, 0.2);
-    border-left: 3px solid #cd7f32;
-}
-
-.leaderboard-item .rank {
-    font-weight: bold;
-    color: var(--accent-color);
-    min-width: 24px;
-}
-
-.leaderboard-item .score {
-    font-weight: bold;
-    color: #00f0f0;
-}
-
-.leaderboard-item .time {
-    font-size: 10px;
-    color: var(--muted-text);
-    margin-top: 2px;
-}
-
-.leaderboard-empty {
-    text-align: center;
-    color: var(--empty-text);
-    font-size: 12px;
-    padding: 20px 0;
-}
-
-.leaderboard-clear {
-    display: block;
-    margin: 8px auto 0;
-    padding: 4px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: rgba(200, 80, 80, 0.2);
-    color: #cc8888;
-    font-size: 11px;
-    cursor: pointer;
-}
-
-.leaderboard-clear:hover {
-    background: rgba(200, 80, 80, 0.4);
+    width: 220px;
 }
 
 .game-board {
@@ -294,6 +408,140 @@ body {
     opacity: 0.4;
 }
 
+/* ========== 排行榜样式 ========== */
+.leaderboard-panel {
+    background: var(--panel-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.leaderboard-panel h3 {
+    font-size: 14px;
+    color: var(--accent-color);
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.leaderboard-sort {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    justify-content: center;
+}
+
+.sort-btn {
+    padding: 3px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--btn-bg);
+    color: var(--muted-text);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sort-btn.active {
+    background: var(--primary-btn-hover);
+    border-color: var(--primary-btn-border);
+    color: #fff;
+}
+
+.leaderboard-list {
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: var(--leaderboard-item-bg);
+    font-size: 12px;
+}
+
+.leaderboard-item.rank-1 {
+    background: rgba(255, 215, 0, 0.2);
+    border-left: 3px solid #ffd700;
+}
+
+.leaderboard-item.rank-2 {
+    background: rgba(192, 192, 192, 0.2);
+    border-left: 3px solid #c0c0c0;
+}
+
+.leaderboard-item.rank-3 {
+    background: rgba(205, 127, 50, 0.2);
+    border-left: 3px solid #cd7f32;
+}
+
+.leaderboard-item .rank {
+    font-weight: bold;
+    color: var(--accent-color);
+    min-width: 24px;
+}
+
+.leaderboard-item .player-info {
+    flex: 1;
+    margin-left: 6px;
+}
+
+.leaderboard-item .nickname {
+    font-weight: bold;
+    color: var(--text-color);
+    font-size: 12px;
+}
+
+.leaderboard-item .detail {
+    font-size: 10px;
+    color: var(--muted-text);
+    margin-top: 2px;
+}
+
+.leaderboard-item .score {
+    font-weight: bold;
+    color: #00f0f0;
+    text-align: right;
+}
+
+.leaderboard-item .time {
+    font-size: 10px;
+    color: var(--muted-text);
+    margin-top: 2px;
+}
+
+.leaderboard-empty {
+    text-align: center;
+    color: var(--empty-text);
+    font-size: 12px;
+    padding: 20px 0;
+}
+
+.leaderboard-clear {
+    display: block;
+    margin: 8px auto 0;
+    padding: 4px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: rgba(200, 80, 80, 0.2);
+    color: #cc8888;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.leaderboard-clear:hover {
+    background: rgba(200, 80, 80, 0.4);
+}
+
+/* ========== 按钮样式 ========== */
 .btn-group {
     display: flex;
     flex-direction: column;
@@ -362,41 +610,7 @@ body {
     margin-right: 4px;
 }
 
-.game-over-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.75);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    border-radius: 4px;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.game-over-overlay.show {
-    display: flex;
-}
-
-.game-over-overlay h2 {
-    font-size: 28px;
-    color: var(--gameover-color);
-    text-shadow: var(--gameover-shadow);
-}
-
-.game-over-overlay .final-score {
-    font-size: 18px;
-    color: #ddd;
-}
-
-.game-over-overlay .btn-row {
-    display: flex;
-    gap: 10px;
-}
-
+/* ========== 游戏覆盖层 ========== */
 .start-overlay {
     position: absolute;
     top: 0;
@@ -449,6 +663,565 @@ body {
     border-color: var(--primary-btn-border);
 }
 
+.game-over-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.game-over-overlay.show {
+    display: flex;
+}
+
+.game-over-overlay h2 {
+    font-size: 28px;
+    color: var(--gameover-color);
+    text-shadow: var(--gameover-shadow);
+}
+
+.game-over-overlay .final-score {
+    font-size: 18px;
+    color: #ddd;
+}
+
+.game-over-overlay .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.replay-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 10;
+}
+
+.replay-overlay.show {
+    display: flex;
+}
+
+.replay-overlay h2 {
+    font-size: 22px;
+    color: var(--accent-color);
+    text-shadow: var(--title-shadow);
+    letter-spacing: 2px;
+}
+
+.replay-progress {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+/* ========== 暂停菜单 ========== */
+.pause-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 10;
+}
+
+.pause-overlay.show {
+    display: flex;
+}
+
+.pause-overlay h2 {
+    font-size: 28px;
+    color: var(--accent-color);
+    text-shadow: var(--title-shadow);
+    letter-spacing: 4px;
+}
+
+.pause-overlay .btn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 160px;
+}
+
+/* ========== 简历页面覆盖层 ========== */
+#resumeOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--overlay-bg);
+    z-index: 9000;
+    display: none;
+    flex-direction: column;
+}
+
+#resumeOverlay.show {
+    display: flex;
+}
+
+.resume-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--nav-bg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.resume-header h2 {
+    font-size: 20px;
+    color: var(--accent-color);
+    letter-spacing: 3px;
+}
+
+.resume-body {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.resume-body iframe {
+    width: 100%;
+    max-width: 900px;
+    height: 100%;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: #fff;
+}
+
+/* ========== 成就系统 ========== */
+#achievementOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--overlay-bg);
+    z-index: 8000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+#achievementOverlay.show {
+    display: flex;
+}
+
+.achievement-panel {
+    background: var(--modal-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.achievement-panel h2 {
+    font-size: 22px;
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 20px;
+    letter-spacing: 3px;
+    text-shadow: var(--title-shadow);
+}
+
+.achievement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--leaderboard-item-bg);
+    transition: all 0.3s;
+}
+
+.achievement-item.unlocked {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.achievement-icon {
+    font-size: 32px;
+    min-width: 42px;
+    text-align: center;
+}
+
+.achievement-item:not(.unlocked) .achievement-icon {
+    filter: grayscale(1);
+    opacity: 0.4;
+}
+
+.achievement-info h4 {
+    font-size: 14px;
+    color: var(--text-color);
+    margin-bottom: 4px;
+}
+
+.achievement-item:not(.unlocked) .achievement-info h4 {
+    color: var(--muted-text);
+}
+
+.achievement-info p {
+    font-size: 12px;
+    color: var(--muted-text);
+}
+
+.achievement-status {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.achievement-item.unlocked .achievement-status {
+    color: #ffd700;
+}
+
+.achievement-item:not(.unlocked) .achievement-status {
+    color: var(--empty-text);
+}
+
+/* ========== 成就通知 ========== */
+#achievementToast {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: var(--toast-bg);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 16px 24px;
+    z-index: 9500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+#achievementToast.show {
+    transform: translateX(0);
+}
+
+#achievementToast .toast-icon {
+    font-size: 28px;
+}
+
+#achievementToast .toast-text h4 {
+    font-size: 14px;
+    color: #ffd700;
+    margin-bottom: 2px;
+}
+
+#achievementToast .toast-text p {
+    font-size: 12px;
+    color: var(--text-color);
+}
+
+/* ========== 模态框通用 ========== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--overlay-bg);
+    z-index: 7000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-box {
+    background: var(--modal-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 28px;
+    width: 90%;
+    max-width: 460px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal-box h2 {
+    font-size: 20px;
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+}
+
+/* ========== 昵称输入模态框 ========== */
+.nickname-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.nickname-input-group label {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.nickname-input-group input {
+    padding: 10px 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--canvas-bg);
+    color: var(--text-color);
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.nickname-input-group input:focus {
+    border-color: var(--accent-color);
+}
+
+.nickname-input-group input::placeholder {
+    color: var(--empty-text);
+}
+
+.nickname-btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* ========== 分享模态框 ========== */
+.share-content {
+    margin-bottom: 16px;
+}
+
+.share-text-box {
+    background: var(--canvas-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-color);
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.share-btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.copy-tip {
+    text-align: center;
+    font-size: 13px;
+    color: #44cc44;
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.copy-tip.show {
+    opacity: 1;
+}
+
+/* ========== 操作引导模态框 ========== */
+.guide-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guide-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.guide-row .guide-keys {
+    min-width: 100px;
+    text-align: right;
+}
+
+.guide-row .guide-keys .key {
+    display: inline-block;
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    margin: 2px;
+}
+
+.guide-row .guide-desc {
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.guide-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--muted-text);
+}
+
+.guide-checkbox input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-color);
+}
+
+/* ========== 过场动画 ========== */
+#readyGoAnim {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+#readyGoAnim.show {
+    display: flex;
+}
+
+#readyGoAnim .anim-text {
+    font-size: 48px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px var(--accent-color);
+    animation: readyGoPulse 0.6s ease-out;
+}
+
+@keyframes readyGoPulse {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#levelUpAnim {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 60px;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.4);
+    z-index: 50;
+    pointer-events: none;
+    display: none;
+}
+
+#levelUpAnim.show {
+    display: block;
+    animation: levelUpFlash 1s ease-out forwards;
+}
+
+@keyframes levelUpFlash {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+    40% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    60% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.8; }
+    80% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.4; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.game-board.shake {
+    animation: boardShake 0.5s ease-out;
+}
+
+@keyframes boardShake {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-8px); }
+    20% { transform: translateX(8px); }
+    30% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    50% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    70% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+}
+
+.game-board .flash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: 4px;
+    z-index: 40;
+}
+
+.game-board .flash-overlay.flash {
+    animation: flashEffect 0.4s ease-out;
+}
+
+@keyframes flashEffect {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+/* ========== 触控 ========== */
 .touch-controls {
     display: none;
     gap: 10px;
@@ -484,112 +1257,7 @@ body {
     justify-content: center;
 }
 
-/* ---------- 顶部控制栏 ---------- */
-.top-controls {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    gap: 6px;
-    z-index: 100;
-}
-
-.sound-toggle {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--border-color);
-    background: var(--panel-bg);
-    color: var(--text-color);
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.sound-toggle.muted {
-    opacity: 0.5;
-}
-
-/* ---------- 主题切换按钮 ---------- */
-.theme-switcher {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    background: var(--panel-bg);
-    border: 2px solid var(--border-color);
-    border-radius: 18px;
-    padding: 3px 6px;
-}
-
-.theme-dot {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-}
-
-.theme-dot:hover {
-    transform: scale(1.15);
-}
-
-.theme-dot.active {
-    border-color: #fff;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
-}
-
-.theme-dot[data-theme="classic"] {
-    background: #8888cc;
-}
-
-.theme-dot[data-theme="neon"] {
-    background: #44cc44;
-}
-
-.theme-dot[data-theme="warm"] {
-    background: #cc8844;
-}
-
-/* ---------- 回放遮罩 ---------- */
-.replay-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    border-radius: 4px;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 10;
-}
-
-.replay-overlay.show {
-    display: flex;
-}
-
-.replay-overlay h2 {
-    font-size: 22px;
-    color: var(--accent-color);
-    text-shadow: var(--title-shadow);
-    letter-spacing: 2px;
-}
-
-.replay-progress {
-    font-size: 14px;
-    color: var(--text-color);
-}
-
+/* ========== 响应式 ========== */
 @media (max-width: 900px) {
     .game-wrapper {
         flex-direction: column;
@@ -639,9 +1307,23 @@ body {
 }
 
 @media (max-width: 600px) {
-    .game-title {
-        font-size: 24px;
-        letter-spacing: 4px;
+    body {
+        padding-top: 60px;
+    }
+
+    #topNav {
+        padding: 0 10px;
+        height: 44px;
+    }
+
+    .nav-title {
+        font-size: 16px;
+        letter-spacing: 2px;
+    }
+
+    .nav-btn {
+        padding: 4px 10px;
+        font-size: 12px;
     }
 
     .info-box .value {
@@ -655,27 +1337,179 @@ body {
     .touch-controls {
         display: flex;
     }
+
+    .achievement-panel {
+        width: 95%;
+        padding: 16px;
+    }
+
+    .modal-box {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .loading-title {
+        font-size: 28px;
+        letter-spacing: 5px;
+    }
 }
 </style>
 </head>
 <body>
 
-<h1 class="game-title">俄罗斯方块</h1>
-
-<div class="top-controls">
-    <div class="theme-switcher">
-        <div class="theme-dot active" data-theme="classic" onclick="switchTheme('classic')" title="经典紫蓝"></div>
-        <div class="theme-dot" data-theme="neon" onclick="switchTheme('neon')" title="霓虹绿"></div>
-        <div class="theme-dot" data-theme="warm" onclick="switchTheme('warm')" title="暖橙"></div>
+<!-- ========== 加载画面 ========== -->
+<div id="loadingScreen">
+    <img class="cover-img" id="coverImg" alt="">
+    <div class="loading-content">
+        <div class="loading-title">俄罗斯方块</div>
+        <div class="loading-blocks">
+            <div class="loading-block"></div>
+            <div class="loading-block"></div>
+            <div class="loading-block"></div>
+            <div class="loading-block"></div>
+            <div class="loading-block"></div>
+            <div class="loading-block"></div>
+            <div class="loading-block"></div>
+        </div>
+        <div class="loading-bar-container">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <div class="loading-text" id="loadingText">加载中...</div>
     </div>
-    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
 </div>
 
+<!-- ========== 顶部导航栏 ========== -->
+<nav id="topNav">
+    <div class="nav-left">
+        <span class="nav-title">俄罗斯方块</span>
+    </div>
+    <div class="nav-right">
+        <button class="nav-btn" onclick="showResume()">关于我</button>
+        <div class="theme-switcher">
+            <div class="theme-dot active" data-theme="classic" onclick="switchTheme('classic')" title="经典紫蓝"></div>
+            <div class="theme-dot" data-theme="neon" onclick="switchTheme('neon')" title="霓虹绿"></div>
+            <div class="theme-dot" data-theme="warm" onclick="switchTheme('warm')" title="暖橙"></div>
+        </div>
+        <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+    </div>
+</nav>
+
+<!-- ========== 简历页面覆盖层 ========== -->
+<div id="resumeOverlay">
+    <div class="resume-header">
+        <h2>关于我</h2>
+        <button class="btn" onclick="hideResume()">返回游戏</button>
+    </div>
+    <div class="resume-body">
+        <iframe src="简历.pdf" title="个人简历"></iframe>
+    </div>
+</div>
+
+<!-- ========== 成就面板覆盖层 ========== -->
+<div id="achievementOverlay">
+    <div class="achievement-panel">
+        <h2>成就</h2>
+        <div class="achievement-list" id="achievementList"></div>
+        <div style="text-align:center;margin-top:16px;">
+            <button class="btn" onclick="hideAchievements()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 操作引导模态框 ========== -->
+<div class="modal-overlay" id="guideModal">
+    <div class="modal-box">
+        <h2>操作说明</h2>
+        <div class="guide-content">
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">←</span> <span class="key">→</span></div>
+                <div class="guide-desc">左右移动方块</div>
+            </div>
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">↑</span></div>
+                <div class="guide-desc">旋转方块</div>
+            </div>
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">↓</span></div>
+                <div class="guide-desc">加速下落</div>
+            </div>
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">空格</span></div>
+                <div class="guide-desc">直接落底（硬降）</div>
+            </div>
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">C</span> / <span class="key">Shift</span></div>
+                <div class="guide-desc">暂存方块（Hold）</div>
+            </div>
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">P</span></div>
+                <div class="guide-desc">暂停 / 继续</div>
+            </div>
+            <div class="guide-row">
+                <div class="guide-keys"><span class="key">ESC</span></div>
+                <div class="guide-desc">结束游戏</div>
+            </div>
+        </div>
+        <div class="guide-checkbox">
+            <input type="checkbox" id="guideDontShow">
+            <label for="guideDontShow">不再提示</label>
+        </div>
+        <div style="text-align:center;margin-top:16px;">
+            <button class="btn primary" onclick="closeGuide()">开始游戏</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 昵称输入模态框 ========== -->
+<div class="modal-overlay" id="nicknameModal">
+    <div class="modal-box">
+        <h2>记录成绩</h2>
+        <div class="nickname-input-group">
+            <label for="nicknameInput">输入你的昵称：</label>
+            <input type="text" id="nicknameInput" placeholder="请输入昵称" maxlength="12" autocomplete="off">
+        </div>
+        <div class="nickname-btn-row">
+            <button class="btn primary" onclick="submitNickname()">确认</button>
+            <button class="btn" onclick="skipNickname()">跳过</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 分享模态框 ========== -->
+<div class="modal-overlay" id="shareModal">
+    <div class="modal-box">
+        <h2>分享成绩</h2>
+        <div class="share-content">
+            <div class="share-text-box" id="shareTextBox"></div>
+            <div class="share-btn-row">
+                <button class="btn primary" onclick="copyShareText()">复制文本</button>
+                <button class="btn" onclick="downloadScreenshot()">保存截图</button>
+                <button class="btn" onclick="hideShareModal()">关闭</button>
+            </div>
+            <div class="copy-tip" id="copyTip">已复制到剪贴板！</div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 成就通知 ========== -->
+<div id="achievementToast">
+    <div class="toast-icon" id="toastIcon">🏆</div>
+    <div class="toast-text">
+        <h4 id="toastTitle">成就解锁！</h4>
+        <p id="toastDesc"></p>
+    </div>
+</div>
+
+<!-- ========== 游戏主体 ========== -->
 <div class="game-wrapper">
 
     <div class="left-panel">
         <div class="leaderboard-panel">
-            <h3>🏆 排行榜</h3>
+            <h3>排行榜</h3>
+            <div class="leaderboard-sort">
+                <button class="sort-btn active" id="sortByScore" onclick="sortLeaderboard('score')">按分数</button>
+                <button class="sort-btn" id="sortByTime" onclick="sortLeaderboard('time')">按时间</button>
+            </div>
             <ul id="leaderboardList" class="leaderboard-list">
                 <li class="leaderboard-empty">暂无记录</li>
             </ul>
@@ -693,8 +1527,9 @@ body {
         </div>
     </div>
 
-    <div class="game-board">
+    <div class="game-board" id="gameBoardEl">
         <canvas id="gameCanvas"></canvas>
+        <div class="flash-overlay" id="flashOverlay"></div>
         <div class="start-overlay" id="startOverlay">
             <h2>俄罗斯方块</h2>
             <div class="difficulty-select">
@@ -710,6 +1545,7 @@ body {
             <div class="btn-row">
                 <button class="btn primary" onclick="restartGame()">重新开始</button>
                 <button class="btn" id="replayBtn" onclick="startReplay()">回放</button>
+                <button class="btn" onclick="showShareModal()">分享成绩</button>
             </div>
         </div>
         <div class="replay-overlay" id="replayOverlay">
@@ -719,6 +1555,17 @@ body {
                 <button class="btn danger" onclick="stopReplay()">停止回放</button>
             </div>
         </div>
+        <div class="pause-overlay" id="pauseOverlay">
+            <h2>暂停中</h2>
+            <div class="btn-row">
+                <button class="btn primary" onclick="togglePause()">继续游戏</button>
+                <button class="btn" onclick="showResume()">关于我</button>
+                <button class="btn" onclick="showAchievements()">成就</button>
+                <button class="btn danger" onclick="endGame(true)">结束游戏</button>
+            </div>
+        </div>
+        <div id="readyGoAnim"><span class="anim-text" id="readyGoText"></span></div>
+        <div id="levelUpAnim"></div>
     </div>
 
     <div class="side-panel">
@@ -748,6 +1595,7 @@ body {
             <button class="btn" id="pauseBtn" onclick="togglePause()">暂停</button>
             <button class="btn danger" id="endBtn" onclick="endGame(true)">结束游戏</button>
             <button class="btn" onclick="restartGame()">重新开始</button>
+            <button class="btn" onclick="showAchievements()">成就</button>
         </div>
     </div>
 </div>
@@ -772,7 +1620,7 @@ body {
  *  经典俄罗斯方块 —— 纯前端实现（增强版）
  * ================================================================ */
 
-/* ---------- 常量定义 ---------- */
+/* ========== 常量定义 ========== */
 
 var COLS = 10;
 var ROWS = 20;
@@ -834,7 +1682,20 @@ var DIFFICULTY_SPEEDS = {
     hard:   [500, 420, 350, 280, 220, 170, 130, 100, 80, 60, 45, 35, 25, 20, 15]
 };
 
-/* ---------- 游戏状态变量 ---------- */
+var DIFFICULTY_LABELS = { easy: '简单', normal: '普通', hard: '困难' };
+
+/* ========== 成就定义 ========== */
+
+var ACHIEVEMENTS = [
+    { id: 'first_game', name: '初出茅庐', desc: '完成第一局游戏', icon: '🎮' },
+    { id: 'line_master', name: '消行达人', desc: '单局消行超过20行', icon: '📏' },
+    { id: 'speed_king', name: '速度之王', desc: '达到5级以上', icon: '⚡' },
+    { id: 'tetris_master', name: 'Tetris大师', desc: '单次消4行(Tetris)', icon: '🏆' },
+    { id: 'combo_king', name: '连击之王', desc: 'Combo达到5以上', icon: '🔥' },
+    { id: 'high_score', name: '高分玩家', desc: '单局得分超过5000', icon: '💎' }
+];
+
+/* ========== 游戏状态变量 ========== */
 
 var board = [];
 var currentPiece = null;
@@ -850,6 +1711,7 @@ var gameOver = false;
 var dropTimer = null;
 var animFrameId = null;
 var leaderboard = [];
+var leaderboardSortBy = 'score';
 var bag = [];
 var combo = 0;
 var lastClearWasTetris = false;
@@ -862,7 +1724,7 @@ var particles = [];
 var soundEnabled = true;
 var audioCtx = null;
 
-/* ---------- 操作回放相关变量 ---------- */
+/* 操作回放相关变量 */
 var actionLog = [];
 var gameStartTime = 0;
 var isReplaying = false;
@@ -872,7 +1734,16 @@ var pieceLog = [];
 var savedPieceLog = [];
 var replayPieceIndex = 0;
 
-/* ---------- Canvas 初始化 ---------- */
+/* 成就相关变量 */
+var unlockedAchievements = {};
+var pendingNickname = false;
+var lastGameScore = 0;
+var lastGameLines = 0;
+var lastGameLevel = 0;
+var lastGameDifficulty = '';
+var lastGameCombo = 0;
+
+/* ========== Canvas 初始化 ========== */
 
 var canvas = document.getElementById('gameCanvas');
 var ctx = canvas.getContext('2d');
@@ -889,7 +1760,7 @@ var holdCtx = holdCanvas.getContext('2d');
 holdCanvas.width = NEXT_BLOCK * 4 + 8;
 holdCanvas.height = NEXT_BLOCK * 4 + 8;
 
-/* ---------- 主题切换 ---------- */
+/* ========== 主题切换 ========== */
 
 function loadTheme() {
     try {
@@ -912,7 +1783,7 @@ function switchTheme(theme) {
     render();
 }
 
-/* ---------- 音效系统 ---------- */
+/* ========== 音效系统 ========== */
 
 function initAudio() {
     if (!audioCtx) {
@@ -940,21 +1811,10 @@ function playTone(freq, duration, type, volume) {
     } catch(e) {}
 }
 
-function playSoundMove() {
-    playTone(200, 0.05, 'square', 0.05);
-}
-
-function playSoundRotate() {
-    playTone(300, 0.08, 'square', 0.06);
-}
-
-function playSoundDrop() {
-    playTone(150, 0.15, 'triangle', 0.1);
-}
-
-function playSoundLock() {
-    playTone(180, 0.1, 'triangle', 0.06);
-}
+function playSoundMove() { playTone(200, 0.05, 'square', 0.05); }
+function playSoundRotate() { playTone(300, 0.08, 'square', 0.06); }
+function playSoundDrop() { playTone(150, 0.15, 'triangle', 0.1); }
+function playSoundLock() { playTone(180, 0.1, 'triangle', 0.06); }
 
 function playSoundClear() {
     playTone(523, 0.1, 'square', 0.08);
@@ -975,13 +1835,24 @@ function playSoundGameOver() {
     setTimeout(function() { playTone(200, 0.4, 'sawtooth', 0.08); }, 400);
 }
 
-function playSoundHold() {
-    playTone(440, 0.06, 'sine', 0.06);
-}
+function playSoundHold() { playTone(440, 0.06, 'sine', 0.06); }
 
 function playSoundCombo() {
     playTone(600, 0.08, 'square', 0.07);
     setTimeout(function() { playTone(800, 0.12, 'square', 0.07); }, 60);
+}
+
+function playSoundAchievement() {
+    playTone(523, 0.1, 'sine', 0.1);
+    setTimeout(function() { playTone(659, 0.1, 'sine', 0.1); }, 100);
+    setTimeout(function() { playTone(784, 0.1, 'sine', 0.1); }, 200);
+    setTimeout(function() { playTone(1047, 0.2, 'sine', 0.12); }, 300);
+}
+
+function playSoundLevelUp() {
+    playTone(440, 0.1, 'square', 0.08);
+    setTimeout(function() { playTone(554, 0.1, 'square', 0.08); }, 100);
+    setTimeout(function() { playTone(659, 0.15, 'square', 0.1); }, 200);
 }
 
 function toggleSound() {
@@ -992,7 +1863,7 @@ function toggleSound() {
     if (soundEnabled) initAudio();
 }
 
-/* ---------- 操作回放记录 ---------- */
+/* ========== 操作回放记录 ========== */
 
 function recordAction(type) {
     if (isReplaying) return;
@@ -1003,7 +1874,7 @@ function recordAction(type) {
     });
 }
 
-/* ---------- 粒子系统 ---------- */
+/* ========== 粒子系统 ========== */
 
 function spawnParticles(row) {
     for (var c = 0; c < COLS; c++) {
@@ -1046,13 +1917,25 @@ function drawParticles() {
     ctx.globalAlpha = 1.0;
 }
 
-/* ---------- 排行榜相关 ---------- */
+/* ========== 排行榜系统 ========== */
 
 function loadLeaderboard() {
     try {
-        var saved = localStorage.getItem('tetris_leaderboard');
+        var saved = localStorage.getItem('tetris_leaderboard_v2');
         if (saved) {
             leaderboard = JSON.parse(saved);
+        } else {
+            var oldSaved = localStorage.getItem('tetris_leaderboard');
+            if (oldSaved) {
+                leaderboard = JSON.parse(oldSaved);
+                leaderboard.forEach(function(item) {
+                    if (!item.nickname) item.nickname = '匿名';
+                    if (!item.lines) item.lines = 0;
+                    if (!item.level) item.level = 1;
+                    if (!item.difficulty) item.difficulty = 'normal';
+                });
+                saveLeaderboard();
+            }
         }
     } catch(e) {
         leaderboard = [];
@@ -1062,14 +1945,15 @@ function loadLeaderboard() {
 
 function saveLeaderboard() {
     try {
-        localStorage.setItem('tetris_leaderboard', JSON.stringify(leaderboard));
+        localStorage.setItem('tetris_leaderboard_v2', JSON.stringify(leaderboard));
     } catch(e) {}
 }
 
-function addToLeaderboard(newScore) {
+function addToLeaderboard(nickname, newScore, newLines, newLevel, newDifficulty) {
     if (newScore <= 0) return;
     var now = new Date();
     var timeStr = now.toLocaleString('zh-CN', {
+        year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
@@ -1077,18 +1961,35 @@ function addToLeaderboard(newScore) {
     });
 
     leaderboard.push({
+        nickname: nickname || '匿名',
         score: newScore,
-        time: timeStr,
-        difficulty: difficulty
+        lines: newLines,
+        level: newLevel,
+        difficulty: newDifficulty,
+        time: timeStr
     });
 
-    leaderboard.sort(function(a, b) {
-        return b.score - a.score;
-    });
-
+    sortLeaderboardData();
     leaderboard = leaderboard.slice(0, MAX_LEADERBOARD);
-
     saveLeaderboard();
+    renderLeaderboard();
+}
+
+function sortLeaderboardData() {
+    if (leaderboardSortBy === 'score') {
+        leaderboard.sort(function(a, b) { return b.score - a.score; });
+    } else {
+        leaderboard.sort(function(a, b) {
+            return new Date(b.time).getTime() - new Date(a.time).getTime();
+        });
+    }
+}
+
+function sortLeaderboard(sortBy) {
+    leaderboardSortBy = sortBy;
+    document.getElementById('sortByScore').classList.toggle('active', sortBy === 'score');
+    document.getElementById('sortByTime').classList.toggle('active', sortBy === 'time');
+    sortLeaderboardData();
     renderLeaderboard();
 }
 
@@ -1103,11 +2004,21 @@ function renderLeaderboard() {
     var html = '';
     leaderboard.forEach(function(item, index) {
         var rankClass = index < 3 ? 'rank-' + (index + 1) : '';
-        var diffLabel = item.difficulty ? ' [' + item.difficulty + ']' : '';
+        var diffLabel = item.difficulty ? DIFFICULTY_LABELS[item.difficulty] || item.difficulty : '';
+        var detailParts = [];
+        if (item.lines) detailParts.push('行' + item.lines);
+        if (item.level) detailParts.push('Lv' + item.level);
+        if (diffLabel) detailParts.push(diffLabel);
+        var detailStr = detailParts.join(' | ');
+
         html += '<li class="leaderboard-item ' + rankClass + '">' +
             '<span class="rank">' + (index + 1) + '</span>' +
-            '<div class="score-info">' +
-                '<div class="score">' + item.score + diffLabel + '</div>' +
+            '<div class="player-info">' +
+                '<div class="nickname">' + (item.nickname || '匿名') + '</div>' +
+                '<div class="detail">' + detailStr + '</div>' +
+            '</div>' +
+            '<div style="text-align:right">' +
+                '<div class="score">' + item.score + '</div>' +
                 '<div class="time">' + item.time + '</div>' +
             '</div>' +
         '</li>';
@@ -1117,12 +2028,348 @@ function renderLeaderboard() {
 }
 
 function clearLeaderboard() {
+    if (!confirm('确定要清除所有排行榜记录吗？')) return;
     leaderboard = [];
     saveLeaderboard();
     renderLeaderboard();
 }
 
-/* ---------- 工具函数 ---------- */
+/* ========== 成就系统 ========== */
+
+function loadAchievements() {
+    try {
+        var saved = localStorage.getItem('tetris_achievements');
+        if (saved) {
+            unlockedAchievements = JSON.parse(saved);
+        }
+    } catch(e) {
+        unlockedAchievements = {};
+    }
+}
+
+function saveAchievements() {
+    try {
+        localStorage.setItem('tetris_achievements', JSON.stringify(unlockedAchievements));
+    } catch(e) {}
+}
+
+function unlockAchievement(id) {
+    if (unlockedAchievements[id]) return;
+    unlockedAchievements[id] = Date.now();
+    saveAchievements();
+
+    var ach = ACHIEVEMENTS.find(function(a) { return a.id === id; });
+    if (ach) {
+        showAchievementToast(ach);
+        playSoundAchievement();
+    }
+}
+
+function checkAchievements() {
+    if (!gameOver || pendingNickname) return;
+
+    unlockAchievement('first_game');
+
+    if (lastGameLines >= 20) unlockAchievement('line_master');
+    if (lastGameLevel >= 5) unlockAchievement('speed_king');
+    if (lastGameScore >= 5000) unlockAchievement('high_score');
+}
+
+function checkInGameAchievements(clearedCount) {
+    if (clearedCount === 4) unlockAchievement('tetris_master');
+    if (combo >= 5) unlockAchievement('combo_king');
+    if (level >= 5) unlockAchievement('speed_king');
+}
+
+function showAchievementToast(ach) {
+    var toast = document.getElementById('achievementToast');
+    document.getElementById('toastIcon').textContent = ach.icon;
+    document.getElementById('toastTitle').textContent = '成就解锁！';
+    document.getElementById('toastDesc').textContent = ach.name + ' - ' + ach.desc;
+    toast.classList.add('show');
+
+    setTimeout(function() {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+function showAchievements() {
+    renderAchievementList();
+    document.getElementById('achievementOverlay').classList.add('show');
+}
+
+function hideAchievements() {
+    document.getElementById('achievementOverlay').classList.remove('show');
+}
+
+function renderAchievementList() {
+    var list = document.getElementById('achievementList');
+    var html = '';
+    ACHIEVEMENTS.forEach(function(ach) {
+        var unlocked = !!unlockedAchievements[ach.id];
+        var statusText = unlocked ? '已解锁' : '未解锁';
+        var unlockTime = '';
+        if (unlocked) {
+            var d = new Date(unlockedAchievements[ach.id]);
+            unlockTime = d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            statusText = '已解锁 ' + unlockTime;
+        }
+        html += '<div class="achievement-item ' + (unlocked ? 'unlocked' : '') + '">' +
+            '<div class="achievement-icon">' + ach.icon + '</div>' +
+            '<div class="achievement-info">' +
+                '<h4>' + ach.name + '</h4>' +
+                '<p>' + ach.desc + '</p>' +
+            '</div>' +
+            '<div class="achievement-status">' + statusText + '</div>' +
+        '</div>';
+    });
+    list.innerHTML = html;
+}
+
+/* ========== 分享功能 ========== */
+
+function generateShareText() {
+    var diffLabel = DIFFICULTY_LABELS[lastGameDifficulty] || lastGameDifficulty;
+    var text = '🎮 俄罗斯方块成绩单 🎮\n' +
+        '━━━━━━━━━━━━━━━━\n' +
+        '📊 分数：' + lastGameScore + '\n' +
+        '⭐ 等级：' + lastGameLevel + '\n' +
+        '📏 消行：' + lastGameLines + '\n' +
+        '🎯 难度：' + diffLabel + '\n';
+    if (lastGameCombo > 1) {
+        text += '🔥 最高Combo：' + lastGameCombo + '\n';
+    }
+    text += '━━━━━━━━━━━━━━━━\n' +
+        '来挑战我吧！\n' +
+        'https://look666s.github.io/021/';
+    return text;
+}
+
+function showShareModal() {
+    var text = generateShareText();
+    document.getElementById('shareTextBox').textContent = text;
+    document.getElementById('copyTip').classList.remove('show');
+    document.getElementById('shareModal').classList.add('show');
+}
+
+function hideShareModal() {
+    document.getElementById('shareModal').classList.remove('show');
+}
+
+function copyShareText() {
+    var text = generateShareText();
+    try {
+        navigator.clipboard.writeText(text).then(function() {
+            document.getElementById('copyTip').classList.add('show');
+            setTimeout(function() {
+                document.getElementById('copyTip').classList.remove('show');
+            }, 2000);
+        });
+    } catch(e) {
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        document.getElementById('copyTip').classList.add('show');
+        setTimeout(function() {
+            document.getElementById('copyTip').classList.remove('show');
+        }, 2000);
+    }
+}
+
+function downloadScreenshot() {
+    try {
+        var tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        var tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(canvas, 0, 0);
+
+        var diffLabel = DIFFICULTY_LABELS[lastGameDifficulty] || lastGameDifficulty;
+        tempCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        tempCtx.fillRect(0, canvas.height - 80, canvas.width, 80);
+        tempCtx.fillStyle = '#fff';
+        tempCtx.font = 'bold 16px "Segoe UI", "Microsoft YaHei", sans-serif';
+        tempCtx.textAlign = 'center';
+        tempCtx.fillText('分数: ' + lastGameScore + '  等级: ' + lastGameLevel + '  消行: ' + lastGameLines, canvas.width / 2, canvas.height - 50);
+        tempCtx.font = '12px "Segoe UI", "Microsoft YaHei", sans-serif';
+        tempCtx.fillStyle = '#aaa';
+        tempCtx.fillText('难度: ' + diffLabel + '  |  俄罗斯方块', canvas.width / 2, canvas.height - 25);
+
+        var link = document.createElement('a');
+        link.download = 'tetris_score_' + lastGameScore + '.png';
+        link.href = tempCanvas.toDataURL('image/png');
+        link.click();
+    } catch(e) {}
+}
+
+/* ========== 简历页面 ========== */
+
+function showResume() {
+    document.getElementById('resumeOverlay').classList.add('show');
+}
+
+function hideResume() {
+    document.getElementById('resumeOverlay').classList.remove('show');
+}
+
+/* ========== 昵称输入模态框 ========== */
+
+function showNicknameModal() {
+    pendingNickname = true;
+    document.getElementById('nicknameInput').value = '';
+    document.getElementById('nicknameModal').classList.add('show');
+    setTimeout(function() {
+        document.getElementById('nicknameInput').focus();
+    }, 100);
+}
+
+function submitNickname() {
+    var nickname = document.getElementById('nicknameInput').value.trim() || '匿名';
+    addToLeaderboard(nickname, lastGameScore, lastGameLines, lastGameLevel, lastGameDifficulty);
+    document.getElementById('nicknameModal').classList.remove('show');
+    pendingNickname = false;
+    checkAchievements();
+}
+
+function skipNickname() {
+    addToLeaderboard('匿名', lastGameScore, lastGameLines, lastGameLevel, lastGameDifficulty);
+    document.getElementById('nicknameModal').classList.remove('show');
+    pendingNickname = false;
+    checkAchievements();
+}
+
+/* ========== 操作引导 ========== */
+
+function shouldShowGuide() {
+    try {
+        return localStorage.getItem('tetris_guide_dont_show') !== 'true';
+    } catch(e) {
+        return true;
+    }
+}
+
+function showGuide() {
+    document.getElementById('guideModal').classList.add('show');
+}
+
+function closeGuide() {
+    var checkbox = document.getElementById('guideDontShow');
+    if (checkbox.checked) {
+        try {
+            localStorage.setItem('tetris_guide_dont_show', 'true');
+        } catch(e) {}
+    }
+    document.getElementById('guideModal').classList.remove('show');
+}
+
+/* ========== 加载画面逻辑 ========== */
+
+function initLoadingScreen() {
+    var coverPrompt = 'cyberpunk style tetris game scene, neon lights, futuristic city background, glowing blocks falling, digital rain effect, dark purple and blue color scheme';
+    var coverUrl = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=' + encodeURIComponent(coverPrompt) + '&image_size=1024x1024';
+
+    var coverImg = document.getElementById('coverImg');
+    coverImg.src = coverUrl;
+    coverImg.onerror = function() {
+        coverImg.style.display = 'none';
+    };
+
+    var loadingBar = document.getElementById('loadingBar');
+    var loadingText = document.getElementById('loadingText');
+    var progress = 0;
+    var loadInterval = setInterval(function() {
+        progress += 2;
+        if (progress > 100) progress = 100;
+        loadingBar.style.width = progress + '%';
+
+        if (progress < 30) {
+            loadingText.textContent = '加载资源中...';
+        } else if (progress < 60) {
+            loadingText.textContent = '初始化游戏...';
+        } else if (progress < 90) {
+            loadingText.textContent = '准备就绪...';
+        } else {
+            loadingText.textContent = '开始！';
+        }
+
+        if (progress >= 100) {
+            clearInterval(loadInterval);
+            setTimeout(function() {
+                var loadingScreen = document.getElementById('loadingScreen');
+                loadingScreen.classList.add('fade-out');
+                setTimeout(function() {
+                    loadingScreen.style.display = 'none';
+                    if (shouldShowGuide()) {
+                        showGuide();
+                    }
+                }, 600);
+            }, 300);
+        }
+    }, 20);
+}
+
+/* ========== 过场动画逻辑 ========== */
+
+function playReadyGoAnimation(callback) {
+    var animEl = document.getElementById('readyGoAnim');
+    var textEl = document.getElementById('readyGoText');
+
+    animEl.classList.add('show');
+    textEl.textContent = 'READY?';
+    textEl.style.animation = 'none';
+    void textEl.offsetWidth;
+    textEl.style.animation = 'readyGoPulse 0.6s ease-out';
+
+    setTimeout(function() {
+        textEl.textContent = 'GO!';
+        textEl.style.color = '#00ff88';
+        textEl.style.animation = 'none';
+        void textEl.offsetWidth;
+        textEl.style.animation = 'readyGoPulse 0.6s ease-out';
+
+        setTimeout(function() {
+            animEl.classList.remove('show');
+            textEl.style.color = '#fff';
+            if (callback) callback();
+        }, 600);
+    }, 700);
+}
+
+function playGameOverAnimation() {
+    var boardEl = document.getElementById('gameBoardEl');
+    var flashEl = document.getElementById('flashOverlay');
+
+    boardEl.classList.add('shake');
+    flashEl.classList.add('flash');
+
+    setTimeout(function() {
+        boardEl.classList.remove('shake');
+    }, 500);
+
+    setTimeout(function() {
+        flashEl.classList.remove('flash');
+    }, 400);
+}
+
+function playLevelUpAnimation(newLevel) {
+    var el = document.getElementById('levelUpAnim');
+    el.textContent = 'Lv.' + newLevel;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    playSoundLevelUp();
+
+    setTimeout(function() {
+        el.classList.remove('show');
+    }, 1000);
+}
+
+/* ========== 工具函数 ========== */
 
 function cloneMatrix(matrix) {
     return matrix.map(function(row) { return row.slice(); });
@@ -1140,7 +2387,7 @@ function rotateMatrix(matrix) {
     return result;
 }
 
-/* ---------- 7-bag 随机系统 ---------- */
+/* ========== 7-bag 随机系统 ========== */
 
 function fillBag() {
     bag = PIECE_TYPES.slice();
@@ -1167,7 +2414,7 @@ function randomType() {
     return type;
 }
 
-/* ---------- 方块创建 ---------- */
+/* ========== 方块创建 ========== */
 
 function createPiece(type) {
     var shape = cloneMatrix(SHAPES[type]);
@@ -1176,7 +2423,7 @@ function createPiece(type) {
     return { shape: shape, type: type, x: x, y: y };
 }
 
-/* ---------- 棋盘操作 ---------- */
+/* ========== 棋盘操作 ========== */
 
 function initBoard() {
     board = [];
@@ -1259,6 +2506,9 @@ function clearLines() {
     var isBackToBack = lastClearWasTetris && isTetris;
     lastClearWasTetris = isTetris;
 
+    /* 检查游戏内成就 */
+    checkInGameAchievements(clearedRows.length);
+
     for (var i = 0; i < clearedRows.length; i++) {
         spawnParticles(clearedRows[i]);
     }
@@ -1290,6 +2540,7 @@ function clearLines() {
             totalScore = Math.floor(totalScore * 1.5);
         }
 
+        var oldLevel = level;
         score += totalScore;
         lines += clearedCount;
         level = Math.floor(lines / 10) + 1;
@@ -1297,6 +2548,11 @@ function clearLines() {
         updateComboText();
         resetDropTimer();
         clearingLines = false;
+
+        /* 等级提升动画 */
+        if (level > oldLevel) {
+            playLevelUpAnimation(level);
+        }
 
         if (isTetris) {
             playSoundTetris();
@@ -1310,8 +2566,6 @@ function updateComboText() {
     var el = document.getElementById('comboText');
     if (combo > 1) {
         el.textContent = 'Combo x' + combo + '!';
-    } else if (combo === 1) {
-        el.textContent = '';
     } else {
         el.textContent = '';
     }
@@ -1327,7 +2581,7 @@ function spawnPiece() {
     }
 }
 
-/* ---------- Hold 暂存功能 ---------- */
+/* ========== Hold 暂存功能 ========== */
 
 function holdCurrentPiece() {
     if (!currentPiece || gamePaused || gameOver || holdUsed || clearingLines) return;
@@ -1374,7 +2628,7 @@ function updateHoldCanvas() {
     holdCtx.globalAlpha = 1.0;
 }
 
-/* ---------- 方块操作 ---------- */
+/* ========== 方块操作 ========== */
 
 function moveLeft() {
     if (!currentPiece || gamePaused || gameOver || clearingLines) return;
@@ -1439,7 +2693,7 @@ function rotatePiece() {
     }
 }
 
-/* ---------- 渲染 ---------- */
+/* ========== 渲染 ========== */
 
 function drawBlock(context, x, y, size, color) {
     context.fillStyle = color;
@@ -1586,7 +2840,7 @@ function render() {
     drawParticles();
 }
 
-/* ---------- 游戏循环 ---------- */
+/* ========== 游戏循环 ========== */
 
 function gameLoop() {
     if (gameRunning && !gamePaused && !gameOver) {
@@ -1607,7 +2861,7 @@ function resetDropTimer() {
     dropTimer = setInterval(dropTick, speed);
 }
 
-/* ---------- 界面更新 ---------- */
+/* ========== 界面更新 ========== */
 
 function updateDisplay() {
     document.getElementById('scoreDisplay').textContent = score;
@@ -1615,7 +2869,7 @@ function updateDisplay() {
     document.getElementById('linesDisplay').textContent = lines;
 }
 
-/* ---------- 难度选择 ---------- */
+/* ========== 难度选择 ========== */
 
 function selectDifficulty(diff, btn) {
     difficulty = diff;
@@ -1625,13 +2879,12 @@ function selectDifficulty(diff, btn) {
     btn.classList.add('selected');
 }
 
-/* ---------- 游戏控制 ---------- */
+/* ========== 游戏控制 ========== */
 
 function startGame() {
     initAudio();
     if (gameRunning && !gameOver) return;
 
-    /* 如果正在回放，先停止 */
     if (isReplaying) {
         stopReplay();
     }
@@ -1652,7 +2905,6 @@ function startGame() {
     clearingLines = false;
     clearAnimRows = [];
 
-    /* 重置操作记录 */
     actionLog = [];
     pieceLog = [];
     gameStartTime = Date.now();
@@ -1663,6 +2915,7 @@ function startGame() {
     document.getElementById('gameOverOverlay').classList.remove('show');
     document.getElementById('startOverlay').classList.add('hidden');
     document.getElementById('replayOverlay').classList.remove('show');
+    document.getElementById('pauseOverlay').classList.remove('show');
     document.getElementById('startBtn').textContent = '游戏中...';
     document.getElementById('pauseBtn').textContent = '暂停';
 
@@ -1670,7 +2923,12 @@ function startGame() {
     spawnPiece();
 
     render();
-    resetDropTimer();
+
+    /* 播放 READY? GO! 动画 */
+    playReadyGoAnimation(function() {
+        resetDropTimer();
+    });
+
     if (!animFrameId) gameLoop();
 }
 
@@ -1678,14 +2936,11 @@ function togglePause() {
     if (!gameRunning || gameOver) return;
     gamePaused = !gamePaused;
     document.getElementById('pauseBtn').textContent = gamePaused ? '继续' : '暂停';
+
     if (gamePaused) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 24px "Segoe UI", "Microsoft YaHei", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('暂停中', canvas.width / 2, canvas.height / 2);
+        document.getElementById('pauseOverlay').classList.add('show');
     } else {
+        document.getElementById('pauseOverlay').classList.remove('show');
         render();
     }
 }
@@ -1700,44 +2955,57 @@ function restartGame() {
 function endGame(manual) {
     if (gameOver) return;
 
-    if (!manual && gameRunning) {
-        addToLeaderboard(score);
-        playSoundGameOver();
-    }
-
     gameOver = true;
     gameRunning = false;
     if (dropTimer) clearInterval(dropTimer);
 
-    /* 保存操作记录用于回放 */
+    /* 记录本局数据 */
+    lastGameScore = score;
+    lastGameLines = lines;
+    lastGameLevel = level;
+    lastGameDifficulty = difficulty;
+    lastGameCombo = combo;
+
     savedActionLog = actionLog.slice();
     savedPieceLog = pieceLog.slice();
 
+    /* 播放游戏结束动画 */
+    if (!manual && score > 0) {
+        playGameOverAnimation();
+        playSoundGameOver();
+    }
+
     document.getElementById('finalScore').textContent = '最终得分：' + score;
-    document.getElementById('gameOverOverlay').classList.add('show');
+    document.getElementById('pauseOverlay').classList.remove('show');
+
+    setTimeout(function() {
+        document.getElementById('gameOverOverlay').classList.add('show');
+    }, manual ? 0 : 500);
+
     document.getElementById('startBtn').textContent = '开始游戏';
 
-    /* 根据是否有操作记录决定回放按钮显示 */
     var replayBtn = document.getElementById('replayBtn');
     replayBtn.style.display = savedActionLog.length > 0 ? 'inline-block' : 'none';
+
+    /* 非手动结束且分数大于0时弹出昵称输入 */
+    if (!manual && score > 0) {
+        setTimeout(function() {
+            showNicknameModal();
+        }, manual ? 100 : 800);
+    }
 }
 
-/* ---------- 操作回放 ---------- */
+/* ========== 操作回放 ========== */
 
 function startReplay() {
     if (savedActionLog.length === 0) return;
 
-    /* 隐藏游戏结束遮罩 */
     document.getElementById('gameOverOverlay').classList.remove('show');
-
-    /* 显示回放遮罩 */
     document.getElementById('replayOverlay').classList.add('show');
 
-    /* 初始化回放状态 */
     isReplaying = true;
     replayTimers = [];
 
-    /* 重置游戏状态 */
     initBoard();
     score = 0;
     level = 1;
@@ -1755,7 +3023,6 @@ function startReplay() {
     clearAnimRows = [];
     holdUsed = false;
 
-    /* 使用记录的方块序列来精确重现游戏 */
     replayPieceIndex = 0;
 
     nextPiece = createPiece(randomType());
@@ -1765,7 +3032,6 @@ function startReplay() {
     updateHoldCanvas();
     render();
 
-    /* 2倍速回放：每个操作间隔除以2 */
     var totalActions = savedActionLog.length;
     document.getElementById('replayProgress').textContent = '0 / ' + totalActions;
 
@@ -1776,7 +3042,6 @@ function startReplay() {
             var timer = setTimeout(function() {
                 if (!isReplaying) return;
 
-                /* 执行操作 */
                 switch (action.type) {
                     case 'moveLeft':
                         if (currentPiece && !isCollision(currentPiece.shape, currentPiece.x - 1, currentPiece.y)) {
@@ -1840,11 +3105,8 @@ function startReplay() {
 
                 updateDisplay();
                 render();
-
-                /* 更新进度 */
                 document.getElementById('replayProgress').textContent = (index + 1) + ' / ' + totalActions;
 
-                /* 回放结束 */
                 if (index === totalActions - 1) {
                     setTimeout(function() {
                         if (isReplaying) {
@@ -1861,23 +3123,28 @@ function startReplay() {
 function stopReplay() {
     isReplaying = false;
 
-    /* 清除所有回放定时器 */
     for (var i = 0; i < replayTimers.length; i++) {
         clearTimeout(replayTimers[i]);
     }
     replayTimers = [];
 
-    /* 隐藏回放遮罩 */
     document.getElementById('replayOverlay').classList.remove('show');
-
-    /* 显示游戏结束遮罩 */
     document.getElementById('gameOverOverlay').classList.add('show');
 }
 
-/* ---------- 键盘事件 ---------- */
+/* ========== 键盘事件 ========== */
 
 document.addEventListener('keydown', function(e) {
     if (isReplaying) return;
+
+    /* 昵称输入框获得焦点时不拦截按键 */
+    if (document.activeElement && document.activeElement.id === 'nicknameInput') {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            submitNickname();
+        }
+        return;
+    }
 
     if (!gameRunning) {
         if (e.keyCode === 32) {
@@ -1932,7 +3199,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-/* ---------- 触控事件 ---------- */
+/* ========== 触控事件 ========== */
 
 function handleTouch(action) {
     if (isReplaying) return;
@@ -1969,7 +3236,7 @@ function handleTouch(action) {
     render();
 }
 
-/* ---------- 滑动手势支持 ---------- */
+/* ========== 滑动手势支持 ========== */
 
 (function() {
     var touchStartX = 0;
@@ -2022,12 +3289,14 @@ function handleTouch(action) {
     }, { passive: true });
 })();
 
-/* ---------- 初始化 ---------- */
+/* ========== 初始化 ========== */
 
 loadTheme();
 loadLeaderboard();
+loadAchievements();
 initBoard();
 render();
+initLoadingScreen();
 </script>
 
 </body>
